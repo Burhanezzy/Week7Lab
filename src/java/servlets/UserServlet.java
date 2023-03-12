@@ -1,86 +1,98 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package servlets;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import models.Role;
+import models.User;
+import services.UserService;
 
 /**
  *
- * @author burha
+ * @author Burhan
  */
 public class UserServlet extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet UserServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet UserServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+
+        UserService us = new UserService();
+
+        try {
+            List<User> users = us.getAll();
+            request.setAttribute("users", users);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+            String email2 = null;
+            if(request.getParameter("change") != null){
+            if (request.getParameter("change").equals("edit")) {
+            try {
+                email2 = request.getParameter("email2");
+                User user2 = us.get(email2);
+                request.setAttribute("user2", user2);
+            } catch (Exception ex) {
+                Logger.getLogger(UserServlet.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            } else if (request.getParameter("change").equals("delete")) {
+            try {
+                email2 = request.getParameter("email2");
+                us.delete(email2);
+            } catch (Exception ex) {
+                Logger.getLogger(UserServlet.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            }
+            }
+
+        getServletContext().getRequestDispatcher("/WEB-INF/user.jsp").forward(request, response);
     }
 
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
-    }
+        UserService us = new UserService();
+        Role role = null;
+       
+            String email = request.getParameter("email");
+            String fname = request.getParameter("fname");
+            String lname = request.getParameter("lname");
+            String password = request.getParameter("password");
+            String roleName = request.getParameter("role");
+            if (roleName.equals("regular user")) {
+                role = new Role(2, roleName);
+            } else {
+                role = new Role(1, roleName);
+            }
+          try {
+              if(request.getParameter("change").equals("Add user")){
+              us.insert(email, fname, lname, password, role);
+              }
+              else if(request.getParameter("change").equals("Update")){
+              us.update(email, fname, lname, password, role);
+              }
+              else  if(request.getParameter("change").equals("Cancel")){
+              us.update(email, fname, lname, password, role);
+              request.setAttribute("message", "Cancelled");
+              }
+        } catch (Exception e) {
 
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
+        }
+        try {
+            List<User> users = us.getAll();
+            request.setAttribute("users", users);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+
+
+        getServletContext().getRequestDispatcher("/WEB-INF/user.jsp").forward(request, response);
+    }
 
 }
